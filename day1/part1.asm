@@ -56,7 +56,7 @@ macro write fd, buf, len {
     syscall3 SYS_write, fd, buf, len
 }
 
-macro safe_write fd, buf, len {
+macro safe_write fd, buf, len { ; for debugging
     stack_reserve 32
     push rax
     push rdi
@@ -110,6 +110,32 @@ print:
     add     rsp, 40
     ret
 
+macro save_all { ; saves all volitile registers, useful for debugging
+    stack_reserve 9*8
+    push rax
+    push rdi
+    push rsi
+    push rdx
+    push rcx
+    push r8
+    push r9
+    push r10
+    push r11
+}
+
+macro restore_all { ; restores all volitile registers
+    pop rax
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop r8
+    pop r9
+    pop r10
+    pop r11
+    stack_restore 9*8
+}
+
 stoi: ; value passed in rdi
     xor rax, rax
     mov rcx, rdi
@@ -156,34 +182,134 @@ read_entire_file: ; filename pointer passed in rdi
     stack_restore 8
     ret
 
+macro save_number list {
+    push rdi
+    add rdi, rcx
+    push rcx
+    push rdx
+    call stoi
+    pop rdx
+    pop rcx
+    pop rdi
+    if list = 1
+        mov DWORD [r8], eax ; place result of stoi into list and add to r8 index
+        add r8, 4
+    else if list = 2
+        mov DWORD [r9], eax
+        add r9, 4
+    end if
+}
+
 parse_lists: ; pass buffer pointer in rdi, size of buffer in rsi,
-             ; # of digits in rdx
-    stack_reserve 16
+             ; number of digits in rdx
+    stack_reserve 24
 
     xor rcx, rcx ; line index
     lea r8, [list_one]
     lea r9, [list_two]
 .loop:
-    cmp rcx, rsi ; if index < buffer size
+    cmp rcx, rsi ; if index >= buffer size, end
     jge .end
 
-    ;safe_write STDERR_FILENO, ok_msg, ok_msg_len
+    save_number 1
 
-    push rdi
-    add rdi, rcx
-    push rcx
-    ;call stoi
-    pop rcx
-    pop rdi
-    mov DWORD [r8], eax
-
+    ; Move index forward by number of digits + 3 spaces
     add rcx, rdx
     add rcx, 3
 
+    save_number 2
+
+    ; Move index forward by number of digits + newline
+    add rcx, rdx
+    add rcx, 1
+
     jmp .loop
 .end:
-    stack_restore 16
+    sub r8, list_one
+    sub r9, list_two
+
+    shr r8, 2 ; size calculation (dividing by 4)
+    shr r9, 2
+
+    mov [list_one_size], r8
+    mov [list_two_size], r9
+
+    stack_restore 24
     ret
+
+; insertion sort is ultra slow, but merge/quick sort is hard in asm, so I might
+; come back and add them later, but this will get the answer.
+insertion_sort: ; sort for list passsed in rdi, size in rsi
+    stack_reserve 8
+    mov rcx, 1
+
+.sort_loop:
+    cmp rcx, rsi ; loop over each element
+    jge .end
+
+    mov edx, DWORD [rdi + rcx*4] ; load value at i
+
+    push rcx ; save index, and set up new loop counter from i-1
+    dec rcx
+
+.inner_loop: ; loop from i-1 to start, moving until in place
+    cmp rcx, 0
+    jl .inner_end
+
+    mov r8d, DWORD [rdi + rcx*4]
+    cmp r8d, edx
+    jg .inner_end
+
+    mov [rdi + rcx*4 + 4], r8d
+    dec rcx
+
+    jmp .inner_loop
+.inner_end:
+    mov [rdi + rcx*4 + 4], edx
+
+    pop rcx ; restore i
+    inc rcx
+    jmp .sort_loop
+
+.end:
+    stack_restore 8
+    ret
+
+; gonna write this as a macro since you'd only ever want to call it once, and
+; removes call and return overhead to macro it. All inputs must be registers.
+macro calc_distance l1, l2, size {
+    xor rcx, rcx ; loop counter
+    xor rax, rax ; result
+    xor r8d, r8d ; need to zero these since we don't touch the upper half
+    xor r9d, r9d
+.loop:
+    mov r8d, [l1 + rcx*4]
+    mov r9d, [l2 + rcx*4]
+
+    sub r8d, r9d ; difference calc
+    mov r9d, r8d
+    neg r9d
+    cmovns r8d, r9d ; abs
+
+    add rax, r8
+
+    inc rcx
+    cmp rcx, size
+    jl .loop
+}
+
+macro print_list list, list_size {
+    i = 0
+    repeat list_size ; this creates binaries w/t 1000s of repreated lines lol
+        if list = 1
+            mov edi, DWORD [list_one + i*4]
+        else if list = 2
+            mov edi, DWORD [list_two + i*4]
+        end if
+        call print
+        i = i + 1
+    end repeat
+}
 
 entry _start
 _start:
@@ -193,8 +319,31 @@ _start:
     jl .fail_read_entire_file
 
     mov rdi, buffer
+    mov rsi, [buffer_len]
+    mov rdx, 5 ; number of digits in each input number
     call parse_lists
-    write STDERR_FILENO, ok_msg, ok_msg_len
+
+    mov rdi, list_one
+    mov rsi, [list_one_size]
+    call insertion_sort
+
+    mov rdi, list_two
+    mov rsi, [list_two_size]
+    call insertion_sort
+
+    mov r12, list_one
+    mov r13, list_two
+    mov r14, [list_one_size]
+    calc_distance r12, r13, r14
+
+    mov rdi, rax
+    call print
+
+    ;write STDOUT_FILENO, list_one_name, list_name_len
+    ;print_list 1, 6 ; size must be hardcoded for macro
+    ;
+    ;write STDOUT_FILENO, list_two_name, list_name_len
+    ;print_list 2, 6 ; size must be hardcoded for macro
 
     exit 0
 
@@ -203,7 +352,7 @@ _start:
 
     exit 69
 
-input_file_path: db "input_example", 0
+input_file_path: db "input", 0
 
 message: file "message.txt"
 
@@ -215,9 +364,15 @@ ok_msg_len = $-ok_msg
 fail_read_entire_file_msg: db "Could not read file", 10
 fail_read_entire_file_msg_len = $-fail_read_entire_file_msg
 
-buffer: rb 20*1024
+buffer: rb 14*1024
 buffer_cap = $-buffer
 buffer_len: rq 1
 
 list_one: rd 1000
+list_one_size: rq 1
 list_two: rd 1000
+list_two_size: rq 1
+
+list_one_name: db "List 1:", 10
+list_two_name: db "List 2:", 10
+list_name_len = $-list_two_name
