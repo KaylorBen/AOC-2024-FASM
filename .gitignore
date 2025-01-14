@@ -6,4 +6,4 @@ fdbg
 
 part?
 
-*.nix
+flake.*
