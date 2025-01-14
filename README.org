@@ -16,11 +16,11 @@ The source code of this tool can be compiled with flat assembler 1, but it is al
 
 * Sources
 Here are some sources I used if you're interested or have to use assembly
-[[https://adventofcode.com/][Advent of Code 2024]]
-[[https://flatassembler.net/docs.php][flat assembler]]
-[[https://blog.rchapman.org/posts/Linux_System_Call_Table_for_x86_64/][Linux System Call Table for x86 64 · Ryan A. Chapman]]
-[[https://en.wikipedia.org/wiki/X86_instruction_listings][x86 instruction listings - Wikipedia]]
-[[https://wiki.osdev.org/System_V_ABI#x86-64][System V ABI - OSDev Wiki]]
-[[https://www.jasonturley.xyz/x86-64-register-cheatsheet/][x86-64 Register Cheatsheet | Jason Turley's Website]]
-[[https://godbolt.org/][Compiler Explorer]]
-[[https://www.felixcloutier.com/x86/][x86 and amd64 instruction reference]]
+ - [[https://adventofcode.com/][Advent of Code 2024]]
+ - [[https://flatassembler.net/docs.php][flat assembler]]
+ - [[https://blog.rchapman.org/posts/Linux_System_Call_Table_for_x86_64/][Linux System Call Table for x86 64 · Ryan A. Chapman]]
+ - [[https://en.wikipedia.org/wiki/X86_instruction_listings][x86 instruction listings - Wikipedia]]
+ - [[https://wiki.osdev.org/System_V_ABI#x86-64][System V ABI - OSDev Wiki]]
+ - [[https://www.jasonturley.xyz/x86-64-register-cheatsheet/][x86-64 Register Cheatsheet | Jason Turley's Website]]
+ - [[https://godbolt.org/][Compiler Explorer]]
+ - [[https://www.felixcloutier.com/x86/][x86 and amd64 instruction reference]]
