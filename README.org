@@ -1,0 +1,26 @@
+#+title: AOC-2024 FASM
+#+author: Ben Kaylor
+
+I missed Advent of Code this year, so decided to do something incredibly stupid instead to make up for it.
+
+I will not be doing one of these each day, because it took 2 days to finish day 1, and I think later days will take much much longer.
+
+The code can be compiled w/t the fasm cli tool, but only works with Linux syscalls
+
+* What is FASM?
+From [[https:flatassembler.net/dosc.php?article=fasmg][flat assembler]]:
+
+It is an assembly engine designed as a successor of the one used in flat assembler 1, one of the recognized assemblers for x86 processors. This is a bare engine that by itself has no ability to recognize and encode instructions of any processor, however it has the ability to become an assembler for any CPU architecture. It has a macroinstruction language that is substantially improved compared to the one provided by flat assembler 1 and it allows to easily implement instruction encoders in form of customizable macroinstructions.
+
+The source code of this tool can be compiled with flat assembler 1, but it is also possible to use flat assembler g itself to compile it. The source contains clauses that include different header files depending on the assembler used. When flat assembler g compiles itself, it uses the provided set of headers that implement x86 instructions and formats with a syntax mostly compatible with flat assembler 1.
+
+* Sources
+Here are some sources I used if you're interested or have to use assembly
+[[https://adventofcode.com/][Advent of Code 2024]]
+[[https://flatassembler.net/docs.php][flat assembler]]
+[[https://blog.rchapman.org/posts/Linux_System_Call_Table_for_x86_64/][Linux System Call Table for x86 64 · Ryan A. Chapman]]
+[[https://en.wikipedia.org/wiki/X86_instruction_listings][x86 instruction listings - Wikipedia]]
+[[https://wiki.osdev.org/System_V_ABI#x86-64][System V ABI - OSDev Wiki]]
+[[https://www.jasonturley.xyz/x86-64-register-cheatsheet/][x86-64 Register Cheatsheet | Jason Turley's Website]]
+[[https://godbolt.org/][Compiler Explorer]]
+[[https://www.felixcloutier.com/x86/][x86 and amd64 instruction reference]]
