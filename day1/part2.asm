@@ -323,10 +323,6 @@ _start:
 
 input_file_path: db "input", 0
 
-message: file "message.txt"
-
-test_msg: db "123", 0
-
 ok_msg: db "👆🤓🐭", 10
 ok_msg_len = $-ok_msg
 
