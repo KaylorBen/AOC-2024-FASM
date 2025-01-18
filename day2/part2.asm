@@ -215,14 +215,28 @@ _start:
 .file_loop:
     call get_report
     ; get_report updates rsi to point at the next line
+    mov r14b, BYTE [report_len]
+    sub r14b, 1
+    xor r13, r13
+    safe_write STDOUT_FILENO, new_file, new_file_len
+.skip_loop:
     xor rcx, rcx
     xor rax, rax
     xor r8, r8
-    mov r14b, BYTE [report_len]
-    sub r14b, 1
 .report_loop:
+    cmp r13, r14
+    sete r11b
+    cmp rcx, r13
+    je .bot_report_loop
+    inc rcx
+    cmp rcx, r13
+    sete r12b
+    add r11b, r12b
+    cmp r11b, 2
+    je .bot_report_loop
+    dec rcx
     mov al, BYTE [report+rcx]
-    mov dl, BYTE [report+rcx+1]
+    mov dl, BYTE [report+rcx+1+r12]
 
     sub al, dl
     ; check for difference > 3
@@ -239,6 +253,7 @@ _start:
     setz al     ; if al is 0, it becomes 1, else it becomes 0
     add r8b, al ; add if it was 0 (aka positive), 1
 
+.bot_report_loop:
     inc rcx
     cmp cl, r14b
     jl .report_loop
@@ -249,14 +264,19 @@ _start:
     cmovs r8w, r9w ; abs(r8b)
 
     add r8b, 1
-    cmp r8b, [report_len]
+    cmp r8b, r14b
     jne .incorrect_report
 
 
     safe_write STDOUT_FILENO, ok_msg, ok_msg_len
     inc rbx ; we have a correct report
+    jmp .correct_report
 .incorrect_report:
     safe_write STDOUT_FILENO, incorrect, incorrect_len
+    inc r13
+    cmp r13, r14
+    jle .skip_loop
+.correct_report:
     cmp rsi, r15
     jl .file_loop
 
@@ -278,8 +298,11 @@ ok_msg_len = $-ok_msg
 fail_read_entire_file_msg: db "Could not read file", 10
 fail_read_entire_file_msg_len = $-fail_read_entire_file_msg
 
-incorrect: db "Incorrect", 10
+incorrect: db "❌ Incorrect", 10
 incorrect_len = $-incorrect
+
+new_file: db 10, "New File:", 10, "-----------", 10
+new_file_len = $-new_file
 
 buffer: rb 20*1024
 buffer_cap = $-buffer
